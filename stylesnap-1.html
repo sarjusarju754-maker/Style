@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>StyleSnap AI</title>
+<style>
+:root{--bg:#faf6f1;--ink:#241b2f;--mut:#6f6578;--card:#fff;--line:#e6dcd2;--ac:#7b2d8e;--acink:#fff;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17121d;--ink:#f3ecf8;--mut:#a99bb7;--card:#221a2c;--line:#38294a;--ac:#c58be0;--acink:#1b1223}}
+:root[data-theme="dark"]{--bg:#17121d;--ink:#f3ecf8;--mut:#a99bb7;--card:#221a2c;--line:#38294a;--ac:#c58be0;--acink:#1b1223}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Georgia,"Times New Roman",serif}
+main{max-width:560px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:2rem;line-height:1.15;margin:8px 0 6px;font-weight:700;letter-spacing:-.01em}
+h2{font-size:1.15rem;margin:26px 0 10px}
+p{margin:0;color:var(--mut)}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+button{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:8px 14px}
+button[aria-pressed="true"]{background:var(--ac);color:var(--acink);border-color:var(--ac)}
+button:focus-visible,input:focus-visible+label{outline:2px solid var(--ac);outline-offset:2px}
+.drop{display:flex;align-items:center;justify-content:center;text-align:center;min-height:150px;margin-top:16px;border:2px dashed var(--line);border-radius:14px;background:var(--card);cursor:pointer;overflow:hidden}
+.drop img{width:100%;max-height:320px;object-fit:cover;display:block}
+#file{position:absolute;opacity:0;pointer-events:none}
+.pick{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.sw{height:120px;border-radius:10px;display:flex;align-items:flex-end;padding:10px;color:#fff;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,.5)}
+.nav{display:flex;align-items:center;justify-content:space-between;margin-top:10px;gap:10px}
+.nav b{font-weight:400;color:var(--mut)}
+.pick h3{margin:10px 0 2px;font-size:1.05rem}
+.look{display:flex;gap:12px;align-items:center}
+.look img{width:96px;height:96px;object-fit:cover;border-radius:10px;flex:none}
+.look .ph{width:96px;height:96px;border-radius:10px;background:var(--line);flex:none}
+.tag{font-size:.8rem;color:var(--mut)}
+#save{margin-top:12px;background:var(--ac);color:var(--acink);border-color:var(--ac)}
+#save:disabled{opacity:.6;cursor:default}
+#msg{margin-top:8px;font-size:.9rem;min-height:1.3em}
+</style>
+</head>
+<body>
+<main>
+<h1>Find your perfect style</h1>
+<p>Add a photo, pick who you're styling and the occasion, then browse outfits and haircuts. Your photo stays on your device.</p>
+
+<input id="file" type="file" accept="image/jpeg,image/png,image/webp">
+<label class="drop" for="file" id="drop"><span>Tap to add your photo<br><span class="tag">JPG, PNG or WEBP, up to 10MB</span></span></label>
+
+<h2>Who are we styling?</h2>
+<div class="row" id="gender"></div>
+<h2>Choose your style</h2>
+<div class="row" id="styles"></div>
+
+<h2>Outfits</h2>
+<div class="pick" id="outfit"></div>
+<h2>Haircuts</h2>
+<div class="pick" id="hair"></div>
+
+<h2>My look</h2>
+<div class="pick look"><div id="lookimg" class="ph"></div><div id="looktxt"></div></div>
+<button id="save" type="button">Save this look</button>
+<p id="msg" role="status" aria-live="polite"></p>
+<p class="tag" style="margin-top:6px">Saving stores only your outfit, haircut and style choices. Your photo never leaves your device.</p>
+</main>
+<script>
+var O=[
+["Linen Shirt Dress","Casual","g","Breezy knee-length dress for easy days","#c9a27c"],
+["Denim Jacket and Tee","Casual","a","Classic layered everyday look","#5f86b0"],
+["Floral Sundress","Casual","g","Light print for sunny outings","#d9788c"],
+["Relaxed Chinos and Polo","Casual","b","Smart-casual and comfortable all day","#7f9f77"],
+["Tailored Blazer Set","Formal","a","Sharp two-piece for meetings","#2f3a4f"],
+["Midi Sheath Dress","Formal","g","Elegant, office-ready silhouette","#4a2c4f"],
+["Three-Piece Suit","Formal","b","Waistcoat, jacket and trousers","#3b3b3b"],
+["Satin Wrap Dress","Formal","g","Fluid fabric with a polished finish","#8b3a5a"],
+["Sequin Mini Dress","Party","g","Sparkle for the night out","#b8921f"],
+["Velvet Blazer and Black Tee","Party","a","Rich texture, easy confidence","#5a1f3a"],
+["Little Black Dress","Party","g","Timeless evening staple","#1d1d1d"],
+["Printed Shirt and Slim Pants","Party","b","Bold print with clean tailoring","#c4582f"],
+["Varsity Jacket Combo","College","a","Campus-ready layered style","#2b5c8a"],
+["Hoodie and Joggers","College","a","Comfort for long lectures","#5f6672"],
+["Pinafore Dress and Tee","College","g","Playful and easy to layer","#6b805c"],
+["Oxford Shirt and Jeans","College","b","Neat and effortless","#6f93bd"],
+["Embroidered Lehenga","Wedding","g","Festive and richly detailed","#a81f35"],
+["Sherwani Set","Wedding","b","Traditional formal wear","#b08d55"],
+["Floor-length Gown","Wedding","g","Flowing, elegant guest look","#6d4a8c"],
+["Bandhgala Suit","Wedding","b","Structured and regal","#1f3d36"],
+["Graphic Tee and Cargos","Streetwear","a","Relaxed urban fit","#4b5563"],
+["Bomber and Wide-leg Pants","Streetwear","a","Statement outerwear","#3f6b4f"],
+["Tracksuit Set","Sporty","a","Matching zip jacket and pants","#d4501e"]
+];
+var H=[
+["Classic Layers","Soft, face-framing layers with easy movement"],
+["Textured Crop","Short and tousled, low maintenance"],
+["Side Part","Clean and polished for any occasion"],
+["Soft Waves","Loose waves with natural volume"],
+["Bob Cut","Chin-length, sharp and modern"],
+["Undercut Fade","Short sides, longer top"],
+["Long Straight","Sleek length with a center or side part"],
+["Messy Bun","Relaxed updo, quick to style"],
+["Curly Taper","Defined curls on top, tapered sides"],
+["Pixie Cut","Short, bold and easy to care for"]
+];
+var S=["All","Casual","Formal","Party","College","Wedding","Streetwear","Sporty"];
+var G=[["a","Prefer not to say"],["b","Boys"],["g","Girls"]];
+var st={g:"a",s:"All",o:0,h:0,photo:null};
+function $(i){return document.getElementById(i)}
+function list(){return O.filter(function(x){return(st.s=="All"||x[1]==st.s)&&(st.g=="a"||x[2]=="a"||x[2]==st.g)})}
+function chips(id,arr,key,val){var el=$(id);el.innerHTML="";arr.forEach(function(a){var v=val?a[0]:a,t=val?a[1]:a;
+var b=document.createElement("button");b.textContent=t;b.setAttribute("aria-pressed",st[key]==v);
+b.onclick=function(){st[key]=v;st.o=0;draw()};el.appendChild(b)})}
+function pick(id,items,key,fmt){var el=$(id),n=items.length;
+if(!n){el.innerHTML="<p>No outfits match this mix. Try another style.</p>";return}
+var i=st[key]%n,x=items[i],f=fmt(x);
+el.innerHTML='<div class="sw" style="background:'+f.c+'">'+f.t+'</div><h3>'+f.t+'</h3><p>'+f.d+'</p>'+
+'<div class="nav"><button id="'+id+'p">Previous</button><b>'+(i+1)+' of '+n+'</b><button id="'+id+'n">Next</button></div>';
+$(id+"p").onclick=function(){st[key]=(i-1+n)%n;draw()};
+$(id+"n").onclick=function(){st[key]=(i+1)%n;draw()}}
+function draw(){
+chips("gender",G,"g",true);chips("styles",S,"s",false);
+var L=list(),oc=L.length?L[st.o%L.length]:null;
+pick("outfit",L,"o",function(x){return{t:x[0],d:x[3]+" ("+x[1]+")",c:x[4]}});
+pick("hair",H,"h",function(x){return{t:x[0],d:x[1],c:"#8a6a4f"}});
+var h=H[st.h%H.length];
+$("lookimg").outerHTML=st.photo?'<img id="lookimg" src="'+st.photo+'" alt="Your photo">':'<div id="lookimg" class="ph"></div>';
+$("looktxt").innerHTML="<h3 style='margin:0'>"+(oc?oc[0]:"Pick an outfit")+"</h3><p>with "+h[0]+"</p><p class='tag'>"+(st.photo?"":"Add a photo to see it here.")+"</p>"}
+$("file").onchange=function(e){var f=e.target.files[0];if(!f)return;
+if(f.size>10*1024*1024){alert("Photo is over 10MB. Choose a smaller one.");return}
+var r=new FileReader();r.onload=function(){st.photo=r.result;$("drop").innerHTML='<img src="'+r.result+'" alt="Your photo">';draw()};r.readAsDataURL(f)};
+var SB_URL="https://zucchnyzvubqxxoboksy.supabase.co",SB_KEY="sb_publishable_Ff8jX2a2PL4Q3TOQJ1HjzA_yAfNJ5zR";
+$("save").onclick=function(){
+var L=list();if(!L.length){$("msg").textContent="Pick an outfit first.";return}
+var o=L[st.o%L.length],h=H[st.h%H.length],b=$("save");
+b.disabled=true;$("msg").textContent="Saving...";
+fetch(SB_URL+"/rest/v1/saved_looks",{method:"POST",
+headers:{"Content-Type":"application/json","apikey":SB_KEY,"Authorization":"Bearer "+SB_KEY,"Prefer":"return=minimal"},
+body:JSON.stringify({gender:st.g,style:st.s,outfit:o[0],haircut:h[0]})})
+.then(function(r){if(!r.ok)throw new Error(r.status);$("msg").textContent="Saved: "+o[0]+" with "+h[0]+"."})
+.catch(function(){$("msg").textContent="Could not save. Check your connection and try again."})
+.then(function(){b.disabled=false})};
+draw();
+</script>
+</body>
+</html>
